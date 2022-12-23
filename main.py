@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from pyqtgraph.Qt import QtGui, QtCore
 import neat
 
 
@@ -78,7 +79,6 @@ class Game:
         if prey.distance_to(predator) <= self.r_collision:
             self.x_collisions.append(prey.x)
             self.y_collisions.append(prey.y)
-            self.n_collisions += 1
             return True
         return False
 
@@ -88,11 +88,11 @@ class Game:
     def calculate_score(self, prey, predator, target):
         prey.score += 1
         if self.is_collision(prey, predator):
-            prey.score -= 100
+            prey.score -= 1000
         if self.is_outside(prey):
             prey.score -= 10000
         if self.is_collision(prey, target):
-            prey.score += 1000
+            prey.score += 10000
         return prey.score
 
     def run(self, n_steps=None):
@@ -108,9 +108,11 @@ class Game:
             self.prey.score = self.calculate_score(self.prey, self.predator, self.target)
             if self.is_collision(self.prey, self.predator):
                 game_over = True
+                self.n_collisions += 1
             if self.is_collision(self.prey, self.target):
                 game_over = True
             step += 1
+        self.prey.score -= 1000*int(self.prey.distance_to(self.target))
         return self.prey.score
 
 
@@ -121,15 +123,9 @@ def run_evolution(genomes, config):
 
         prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=net)
         target = Target(80, 80)
-        predator = Predator(50, 0, maxdfi=np.pi / 20, v=1.2)
-        game = Game(prey, predator, target, n_steps=150, r_collision=1)
+        predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.2)
+        game = Game(prey, predator, target, n_steps=1000, r_collision=1)
         genome.fitness = game.run()
-
-    fig, ax = plt.subplots()
-    ax.plot(game.prey.x_history, game.prey.y_history, 'o', color='green')
-    ax.plot(game.predator.x_history, game.predator.y_history, 'o', color='red')
-    ax.plot(game.x_collisions, game.y_collisions, 'o', markersize=15, mfc='none', color='k')
-    plt.show()
 
 
 def main():
@@ -139,8 +135,21 @@ def main():
     # init NEAT
     p = neat.Population(config)
     # run NEAT
-    p.run(run_evolution, 10)
+    winner = p.run(run_evolution, 100)
+    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
+    prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=winner_net)
+    target = Target(80, 80)
+    predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.2)
+    game = Game(prey, predator, target, n_steps=1000, r_collision=1)
+    score = game.run()
+    print(f"{score=}, {game.n_collisions=}")
+
+    fig, ax = plt.subplots()
+    ax.plot(game.prey.x_history, game.prey.y_history, 'o', color='green')
+    ax.plot(game.predator.x_history, game.predator.y_history, 'o', color='red')
+    ax.plot(game.x_collisions, game.y_collisions, 'o', markersize=15, mfc='none', color='k')
+    plt.show()
 
 if __name__ == '__main__':
     main()
