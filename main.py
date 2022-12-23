@@ -98,6 +98,9 @@ class Game:
         self.Lx = Lx
         self.Ly = Ly
 
+    def init(self, net, n_steps=100, r_collision=0, Lx=100, Ly=100):
+        self.__init__(net, n_steps, r_collision, Lx, Ly)
+
     def is_collision(self, prey, predator):
         if prey.distance_to(predator) <= self.r_collision:
             self.x_collisions.append(prey.x)
@@ -192,8 +195,11 @@ def main():
     ax.plot(ts, stats.get_fitness_median())
     plt.show()
 
-    for i in range(0, 5):
+    for i in range(0, 10):
         game = Game(winner_net, n_steps=300, r_collision=1)
+        game.predator_start_max = 30.0
+        game.predator_start_min = 70.0
+        game.init(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
         p1 = pg.plot()
