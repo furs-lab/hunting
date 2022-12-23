@@ -109,7 +109,8 @@ class Game:
         return abs(player.x) > self.Lx or abs(player.y) > self.Ly
 
     def calculate_score(self, prey, predator, target):
-        prey.score += 1
+        # prey.score += 1
+        prey.score += 0.03/(prey.distance_to(target)+1)
         if self.is_collision(prey, predator):
             prey.score -= 1000
         if self.is_outside(prey):
@@ -135,11 +136,8 @@ class Game:
             if self.is_collision(self.prey, self.target):
                 game_over = True
             step += 1
-        self.prey.score -= 11 * int(self.prey.distance_to(self.target))
-        if step < 200 and self.n_collisions == 0:
-            self.prey.score += 5000
-        else:
-            self.prey.score -= step
+
+        # self.prey.score -= 11 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
 
@@ -165,7 +163,7 @@ def show_plot(prey, predator, target, p1):
                 clear=False)
         p1.plot([predator.x_history[i]], [predator.y_history[i]], symbol='o', symbolPen='r', symbolBrush='r',
                 symbolSize=5, clear=False)
-        time.sleep(0.02)
+        time.sleep(0.001)
         pg.QtWidgets.QApplication.processEvents()
     # app.exec_()
 
@@ -181,7 +179,7 @@ def main():
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     # run NEAT
-    winner = p.run(run_evolution, 100)
+    winner = p.run(run_evolution, 500)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
     ts = np.arange(0, len(stats.get_fitness_median()), 1).tolist()
@@ -190,7 +188,7 @@ def main():
     plt.show()
 
     for i in range(0, 1):
-        game = Game(winner_net, n_steps=300, r_collision=1)
+        game = Game(winner_net, n_steps=500, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
         p1 = pg.plot()
