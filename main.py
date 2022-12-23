@@ -71,8 +71,8 @@ class Target(Player):
 class Game:
     predator_dfi_max = 16
     predator_dfi_min = 15
-    predator_v_max = 1.31
-    predator_v_min = 1.3
+    predator_v_max = 1.41
+    predator_v_min = 1.4
     predator_start_max = 50.1
     predator_start_min = 50.0
     prey_start_x = 20
@@ -86,7 +86,7 @@ class Game:
         self.prey = Prey(self.prey_start_x, self.prey_start_y, fi=np.pi/4,
                          maxdfi=np.pi / self.prey_dfi, v=self.prey_v, net=net)
         self.predator = Predator(uniform(self.predator_start_min, self.predator_start_max),
-                                 0*uniform(self.predator_start_min, self.predator_start_max),
+                                 uniform(self.predator_start_min, self.predator_start_max),
                            maxdfi=np.pi / randrange(self.predator_dfi_min, self.predator_dfi_max),
                            v=uniform(self.predator_v_min, self.predator_v_max))
         self.target = Target(self.target_x, self.target_y)
@@ -141,7 +141,7 @@ class Game:
                 game_over = True
             step += 1
         self.prey.score = self.calculate_score1(self.prey, self.predator, self.target)
-        # self.prey.score += step*0.3
+        self.prey.score += step*0.1
         # self.prey.score -= 11 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
@@ -192,7 +192,7 @@ def main():
     ax.plot(ts, stats.get_fitness_median())
     plt.show()
 
-    for i in range(0, 1):
+    for i in range(0, 5):
         game = Game(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
