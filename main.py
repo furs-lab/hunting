@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pyqtgraph.Qt import QtGui, QtCore
+import pyqtgraph as pg
+import pyqtgraph.exporters
+import time
 import neat
 
 
@@ -43,7 +45,7 @@ class Prey(Player):
 
     def decision(self, predator, target):
         self.fi += self.maxdfi * self.net.activate((self.direction_to(predator), self.distance_to(predator),
-                                                   self.direction_to(target), self.distance_to(target)))[0]
+                                                    self.direction_to(target), self.distance_to(target)))[0]
         # dfi = self.direction_to(target) - self.fi
         # self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
         # return self.fi
@@ -112,7 +114,7 @@ class Game:
             if self.is_collision(self.prey, self.target):
                 game_over = True
             step += 1
-        self.prey.score -= 1000*int(self.prey.distance_to(self.target))
+        self.prey.score -= 1000 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
 
@@ -123,9 +125,27 @@ def run_evolution(genomes, config):
 
         prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=net)
         target = Target(80, 80)
-        predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.2)
-        game = Game(prey, predator, target, n_steps=1000, r_collision=1)
+        predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.3)
+        game = Game(prey, predator, target, n_steps=200, r_collision=1)
         genome.fitness = game.run()
+
+
+def show_plot(prey, predator, target, p1):
+    # import sys
+    # if sys.flags.interactive != 1 or not hasattr(pg.QtCore, 'PYQT_VERSION'):
+    #     app = pg.QtWidgets.QApplication(sys.argv)
+
+    # p1 = pg.plot()
+    p1.plot([target.x], [target.y], symbol='o', symbolPen='g', symbolBrush=None, symbolSize=15,
+            clear=False)
+    for i in range(0, len(prey.x_history)):
+        p1.plot([prey.x_history[i]], [prey.y_history[i]], symbol='o', symbolPen='g', symbolBrush='g', symbolSize=5,
+                clear=False)
+        p1.plot([predator.x_history[i]], [predator.y_history[i]], symbol='o', symbolPen='r', symbolBrush='r',
+                symbolSize=5, clear=False)
+        time.sleep(0.05)
+        pg.QtWidgets.QApplication.processEvents()
+    # app.exec_()
 
 
 def main():
@@ -140,16 +160,21 @@ def main():
 
     prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=winner_net)
     target = Target(80, 80)
-    predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.2)
-    game = Game(prey, predator, target, n_steps=1000, r_collision=1)
-    score = game.run()
-    print(f"{score=}, {game.n_collisions=}")
+    predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.3)
+    for i in range(0,5):
+        game = Game(prey, predator, target, n_steps=100, r_collision=1)
+        score = game.run()
+        print(f"{score=}, {game.n_collisions=}")
+        p1 = pg.plot()
+        show_plot(game.prey, game.predator, game.target, p1)
 
-    fig, ax = plt.subplots()
-    ax.plot(game.prey.x_history, game.prey.y_history, 'o', color='green')
-    ax.plot(game.predator.x_history, game.predator.y_history, 'o', color='red')
-    ax.plot(game.x_collisions, game.y_collisions, 'o', markersize=15, mfc='none', color='k')
-    plt.show()
+    # show_plot(game.prey, game.predator, game.target)
+
 
 if __name__ == '__main__':
+    import sys
+
+    if sys.flags.interactive != 1 or not hasattr(pg.QtCore, 'PYQT_VERSION'):
+        app = pg.QtWidgets.QApplication(sys.argv)
     main()
+    app.exec_()
