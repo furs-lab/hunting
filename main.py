@@ -136,6 +136,10 @@ class Game:
                 game_over = True
             step += 1
         self.prey.score -= 11 * int(self.prey.distance_to(self.target))
+        if step < 200 and self.n_collisions == 0:
+            self.prey.score += 5000
+        else:
+            self.prey.score -= step
         return self.prey.score
 
 
@@ -177,7 +181,7 @@ def main():
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     # run NEAT
-    winner = p.run(run_evolution, 500)
+    winner = p.run(run_evolution, 100)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
     ts = np.arange(0, len(stats.get_fitness_median()), 1).tolist()
