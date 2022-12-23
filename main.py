@@ -52,7 +52,7 @@ class Prey(Player):
                                                     self.direction_to(target), self.distance_to(target)))[0]
         # dfi = self.direction_to(target) - self.fi
         # self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
-        # return self.fi
+        return self.fi
 
 
 class Predator(Player):
@@ -71,8 +71,8 @@ class Target(Player):
 class Game:
     predator_dfi_max = 16
     predator_dfi_min = 15
-    predator_v_max = 1.2
-    predator_v_min = 1.4
+    predator_v_max = 1.31
+    predator_v_min = 1.3
     predator_start_max = 50.1
     predator_start_min = 50.0
     prey_start_x = 20
@@ -120,7 +120,7 @@ class Game:
         return prey.score
 
     def calculate_score1(self, prey, predator, target):
-        return 1/(prey.distance_to(target)+0.01) - self.n_collisions*1000
+        return -prey.distance_to(target)
 
 
     def run(self, n_steps=None):
@@ -141,6 +141,7 @@ class Game:
                 game_over = True
             step += 1
         self.prey.score = self.calculate_score1(self.prey, self.predator, self.target)
+        # self.prey.score += step*0.3
         # self.prey.score -= 11 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
@@ -150,7 +151,7 @@ def run_evolution(genomes, config):
         genome.fitness = 0.0
         net = neat.nn.FeedForwardNetwork.create(genome, config)
 
-        game = Game(net, n_steps=300, r_collision=1)
+        game = Game(net, n_steps=200, r_collision=1)
         genome.fitness = game.run()
 
 
@@ -183,7 +184,7 @@ def main():
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     # run NEAT
-    winner = p.run(run_evolution, 100)
+    winner = p.run(run_evolution, 500)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
     ts = np.arange(0, len(stats.get_fitness_median()), 1).tolist()
@@ -192,7 +193,7 @@ def main():
     plt.show()
 
     for i in range(0, 1):
-        game = Game(winner_net, n_steps=500, r_collision=1)
+        game = Game(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
         p1 = pg.plot()
