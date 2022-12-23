@@ -110,7 +110,7 @@ class Game:
 
     def calculate_score(self, prey, predator, target):
         # prey.score += 1
-        prey.score += 0.03/(prey.distance_to(target)+1)
+        prey.score += 0.02/(prey.distance_to(target)+1)
         if self.is_collision(prey, predator):
             prey.score -= 1000
         if self.is_outside(prey):
@@ -118,6 +118,10 @@ class Game:
         if self.is_collision(prey, target):
             prey.score += 10000
         return prey.score
+
+    def calculate_score1(self, prey, predator, target):
+        return 1/(prey.distance_to(target)+0.01) - self.n_collisions*1000
+
 
     def run(self, n_steps=None):
         if n_steps is not None:
@@ -136,7 +140,7 @@ class Game:
             if self.is_collision(self.prey, self.target):
                 game_over = True
             step += 1
-
+        self.prey.score = self.calculate_score1(self.prey, self.predator, self.target)
         # self.prey.score -= 11 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
@@ -179,7 +183,7 @@ def main():
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     # run NEAT
-    winner = p.run(run_evolution, 500)
+    winner = p.run(run_evolution, 100)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
     ts = np.arange(0, len(stats.get_fitness_median()), 1).tolist()
