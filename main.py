@@ -71,8 +71,8 @@ class Target(Player):
 class Game:
     predator_dfi_max = 16
     predator_dfi_min = 15
-    predator_v_max = 1.31
-    predator_v_min = 1.3
+    predator_v_max = 1.2
+    predator_v_min = 1.4
     predator_start_max = 50.1
     predator_start_min = 50.0
     prey_start_x = 20
@@ -111,9 +111,9 @@ class Game:
     def calculate_score(self, prey, predator, target):
         prey.score += 1
         if self.is_collision(prey, predator):
-            prey.score -= 10000
-        if self.is_outside(prey):
             prey.score -= 1000
+        if self.is_outside(prey):
+            prey.score -= 100
         if self.is_collision(prey, target):
             prey.score += 10000
         return prey.score
@@ -135,7 +135,7 @@ class Game:
             if self.is_collision(self.prey, self.target):
                 game_over = True
             step += 1
-        self.prey.score -= 150 * int(self.prey.distance_to(self.target))
+        self.prey.score -= 11 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
 
