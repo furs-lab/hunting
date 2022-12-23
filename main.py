@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import neat
 
 
 class Player:
@@ -32,10 +33,19 @@ class Player:
 
 
 class Prey(Player):
-    def decision(self, target):
-        dfi = self.direction_to(target) - self.fi
-        self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
-        return self.fi
+    def __init__(self, x, y, fi=0, v=0, maxdfi=0, minv=0, maxv=0, net=None):
+        super().__init__(x, y, fi, v, maxdfi, minv, maxv)
+        self.net = net
+
+    def set_ai(self, net):
+        self.net = net
+
+    def decision(self, predator, target):
+        self.fi += self.maxdfi * self.net.activate((self.direction_to(predator), self.distance_to(predator),
+                                                   self.direction_to(target), self.distance_to(target)))[0]
+        # dfi = self.direction_to(target) - self.fi
+        # self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
+        # return self.fi
 
 
 class Predator(Player):
@@ -52,7 +62,11 @@ class Target(Player):
 
 
 class Game:
-    def __init__(self, r_collision=0, Lx=100, Ly=100):
+    def __init__(self, prey, predator, target, n_steps=100, r_collision=0, Lx=100, Ly=100):
+        self.prey = prey
+        self.predator = predator
+        self.target = target
+        self.n_steps = n_steps
         self.x_collisions = []
         self.y_collisions = []
         self.r_collision = r_collision
@@ -81,33 +95,51 @@ class Game:
             prey.score += 1000
         return prey.score
 
+    def run(self, n_steps=None):
+        if n_steps is not None:
+            self.n_steps = n_steps
+        step = 0
+        game_over = False
+        while step < self.n_steps and not game_over:
+            self.prey.decision(self.predator, self.target)
+            self.predator.decision(self.prey)
+            self.prey.new_position()
+            self.predator.new_position()
+            self.prey.score = self.calculate_score(self.prey, self.predator, self.target)
+            if self.is_collision(self.prey, self.predator):
+                game_over = True
+            if self.is_collision(self.prey, self.target):
+                game_over = True
+            step += 1
+        return self.prey.score
 
-def main():
-    game = Game(r_collision=1)
-    prey = Prey(0, 0, maxdfi=np.pi / 10, v=1)
-    target = Target(90, 90)
-    predator = Predator(50, 0, maxdfi=np.pi / 20, v=1.1)
-    maxt = 150
-    t = 0
-    while t < maxt:
-        prey.decision(target)
-        predator.decision(prey)
-        prey.new_position()
-        predator.new_position()
-        print("score = ", game.calculate_score(prey, predator, target))
-        if game.is_collision(prey, predator):
-            print(f"Eat - {t}, {prey.x}, {prey.y}")
-            break
-        if game.is_collision(prey, target):
-            print(f"Target - {t}, {prey.x}, {prey.y}")
-            break
-        t += 1
+
+def run_evolution(genomes, config):
+    for genome_id, genome in genomes:
+        genome.fitness = 0.0
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
+
+        prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=net)
+        target = Target(80, 80)
+        predator = Predator(50, 0, maxdfi=np.pi / 20, v=1.2)
+        game = Game(prey, predator, target, n_steps=150, r_collision=1)
+        genome.fitness = game.run()
 
     fig, ax = plt.subplots()
-    ax.plot(prey.x_history, prey.y_history, 'o', color='green')
-    ax.plot(predator.x_history, predator.y_history, 'o', color='red')
+    ax.plot(game.prey.x_history, game.prey.y_history, 'o', color='green')
+    ax.plot(game.predator.x_history, game.predator.y_history, 'o', color='red')
     ax.plot(game.x_collisions, game.y_collisions, 'o', markersize=15, mfc='none', color='k')
     plt.show()
+
+
+def main():
+    config_path = "./config-feedforward.txt"
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet,
+                                neat.DefaultStagnation, config_path)
+    # init NEAT
+    p = neat.Population(config)
+    # run NEAT
+    p.run(run_evolution, 10)
 
 
 if __name__ == '__main__':
