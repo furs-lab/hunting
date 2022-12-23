@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyqtgraph as pg
 import pyqtgraph.exporters
+from random import randrange, uniform
 import time
 import neat
 
@@ -18,6 +19,9 @@ class Player:
         self.x_history = []
         self.y_history = []
         self.score = 0
+
+    def init(self, x, y, fi=0, v=0, maxdfi=0, minv=0, maxv=0):
+        self.__init__(x, y, fi=0, v=0, maxdfi=0, minv=0, maxv=0)
 
     def new_position(self):
         self.x += self.v * np.cos(self.fi)
@@ -65,10 +69,26 @@ class Target(Player):
 
 
 class Game:
-    def __init__(self, prey, predator, target, n_steps=100, r_collision=0, Lx=100, Ly=100):
-        self.prey = prey
-        self.predator = predator
-        self.target = target
+    predator_dfi_max = 15
+    predator_dfi_min = 14
+    predator_v_max = 1.31
+    predator_v_min = 1.3
+    predator_start_max = 50.1
+    predator_start_min = 50
+    prey_start_x = 20
+    prey_start_y = 20
+    prey_dfi = 10
+    prey_v = 1
+    target_x = 80
+    target_y = 80
+
+    def __init__(self, net, n_steps=100, r_collision=0, Lx=100, Ly=100):
+        self.prey = Prey(self.prey_start_x, self.prey_start_y, maxdfi=np.pi / self.prey_dfi, v=self.prey_v, net=net)
+        self.predator = Predator(uniform(self.predator_start_min, self.predator_start_max),
+                                 uniform(self.predator_start_min, self.predator_start_max),
+                           maxdfi=np.pi / randrange(self.predator_dfi_min, self.predator_dfi_max),
+                           v=uniform(self.predator_v_min, self.predator_v_max))
+        self.target = Target(self.target_x, self.target_y)
         self.n_steps = n_steps
         self.x_collisions = []
         self.y_collisions = []
@@ -123,10 +143,7 @@ def run_evolution(genomes, config):
         genome.fitness = 0.0
         net = neat.nn.FeedForwardNetwork.create(genome, config)
 
-        prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=net)
-        target = Target(80, 80)
-        predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.3)
-        game = Game(prey, predator, target, n_steps=200, r_collision=1)
+        game = Game(net, n_steps=500, r_collision=1)
         genome.fitness = game.run()
 
 
@@ -143,7 +160,7 @@ def show_plot(prey, predator, target, p1):
                 clear=False)
         p1.plot([predator.x_history[i]], [predator.y_history[i]], symbol='o', symbolPen='r', symbolBrush='r',
                 symbolSize=5, clear=False)
-        time.sleep(0.05)
+        time.sleep(0.02)
         pg.QtWidgets.QApplication.processEvents()
     # app.exec_()
 
@@ -158,11 +175,8 @@ def main():
     winner = p.run(run_evolution, 100)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
-    prey = Prey(20, 20, maxdfi=np.pi / 10, v=1, net=winner_net)
-    target = Target(80, 80)
-    predator = Predator(50, 0, maxdfi=np.pi / 15, v=1.3)
-    for i in range(0,5):
-        game = Game(prey, predator, target, n_steps=100, r_collision=1)
+    for i in range(0, 5):
+        game = Game(winner_net, n_steps=500, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
         p1 = pg.plot()
