@@ -48,10 +48,10 @@ class Prey(Player):
         self.net = net
 
     def decision(self, predator, target):
-        self.fi += self.maxdfi * self.net.activate((self.direction_to(predator), self.distance_to(predator),
-                                                    self.direction_to(target), self.distance_to(target)))[0]
-        # dfi = self.direction_to(target) - self.fi
-        # self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
+        self.fi += self.maxdfi * self.net.activate((self.direction_to(predator)/np.pi,
+                                                    self.distance_to(predator)/100,
+                                                    self.direction_to(target)/np.pi,
+                                                    self.distance_to(target)/100))[0]
         return self.fi
 
 
@@ -187,7 +187,7 @@ def main():
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     # run NEAT
-    winner = p.run(run_evolution, 500)
+    winner = p.run(run_evolution, 300)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
     ts = np.arange(0, len(stats.get_fitness_median()), 1).tolist()
@@ -197,8 +197,8 @@ def main():
 
     for i in range(0, 10):
         game = Game(winner_net, n_steps=300, r_collision=1)
-        game.predator_start_max = 30.0
-        game.predator_start_min = 70.0
+        game.predator_start_max = 51.0
+        game.predator_start_min = 50.0
         game.init(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
