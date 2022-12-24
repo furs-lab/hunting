@@ -48,7 +48,7 @@ class Prey(Player):
         self.net = net
 
     def decision(self, predator, target):
-        self.fi += self.maxdfi * self.net.activate((self.fi / np.pi,
+        self.fi += self.maxdfi * self.net.activate((self.fi / np.pi, predator.fi/np.pi,
                                                     self.direction_to(predator) / np.pi,
                                                     self.distance_to(predator) / 100,
                                                     self.direction_to(target) / np.pi,
