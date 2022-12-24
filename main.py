@@ -191,7 +191,7 @@ def main():
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     # run NEAT
-    winner = p.run(run_evolution, 300)
+    winner = p.run(run_evolution, 100)
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
 
     ts = np.arange(0, len(stats.get_fitness_median()), 1).tolist()
@@ -202,7 +202,7 @@ def main():
     for i in range(0, 5):
         game = Game(winner_net, n_steps=300, r_collision=1)
         game.predator_start_max = 50.1
-        game.predator_start_min = 50.0
+        game.predator_start_min = 40.0
         game.init(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
