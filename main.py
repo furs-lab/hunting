@@ -48,10 +48,11 @@ class Prey(Player):
         self.net = net
 
     def decision(self, predator, target):
-        self.fi += self.maxdfi * self.net.activate((self.direction_to(predator)/np.pi,
-                                                    self.distance_to(predator)/100,
-                                                    self.direction_to(target)/np.pi,
-                                                    self.distance_to(target)/100))[0]
+        self.fi += self.maxdfi * self.net.activate((self.fi / np.pi,
+                                                    self.direction_to(predator) / np.pi,
+                                                    self.distance_to(predator) / 100,
+                                                    self.direction_to(target) / np.pi,
+                                                    self.distance_to(target) / 100))[0]
         return self.fi
 
 
@@ -83,12 +84,12 @@ class Game:
     target_y = 80
 
     def __init__(self, net, n_steps=100, r_collision=0, Lx=100, Ly=100):
-        self.prey = Prey(self.prey_start_x, self.prey_start_y, fi=np.pi/4,
+        self.prey = Prey(self.prey_start_x, self.prey_start_y, fi=np.pi / 4,
                          maxdfi=np.pi / self.prey_dfi, v=self.prey_v, net=net)
         self.predator = Predator(uniform(self.predator_start_min, self.predator_start_max),
                                  uniform(self.predator_start_min, self.predator_start_max),
-                           maxdfi=np.pi / randrange(self.predator_dfi_min, self.predator_dfi_max),
-                           v=uniform(self.predator_v_min, self.predator_v_max))
+                                 maxdfi=np.pi / randrange(self.predator_dfi_min, self.predator_dfi_max),
+                                 v=uniform(self.predator_v_min, self.predator_v_max))
         self.target = Target(self.target_x, self.target_y)
         self.n_steps = n_steps
         self.x_collisions = []
@@ -113,7 +114,7 @@ class Game:
 
     def calculate_score(self, prey, predator, target):
         # prey.score += 1
-        prey.score += 0.02/(prey.distance_to(target)+1)
+        prey.score += 0.02 / (prey.distance_to(target) + 1)
         if self.is_collision(prey, predator):
             prey.score -= 1000
         if self.is_outside(prey):
@@ -124,7 +125,6 @@ class Game:
 
     def calculate_score1(self, prey, predator, target):
         return -prey.distance_to(target)
-
 
     def run(self, n_steps=None):
         if n_steps is not None:
@@ -144,7 +144,11 @@ class Game:
                 game_over = True
             step += 1
         self.prey.score = self.calculate_score1(self.prey, self.predator, self.target)
-        self.prey.score += step*0.1
+        self.prey.score += step * 0.2
+        if self.is_collision(self.prey, self.target):
+            self.prey.score += 50
+        if self.prey.distance_to(self.target) < 30 and not self.is_collision(self.prey, self.predator):
+            self.prey.score += 20
         # self.prey.score -= 11 * int(self.prey.distance_to(self.target))
         return self.prey.score
 
@@ -195,17 +199,15 @@ def main():
     ax.plot(ts, stats.get_fitness_median())
     plt.show()
 
-    for i in range(0, 10):
+    for i in range(0, 5):
         game = Game(winner_net, n_steps=300, r_collision=1)
-        game.predator_start_max = 51.0
+        game.predator_start_max = 50.1
         game.predator_start_min = 50.0
         game.init(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
         p1 = pg.plot()
         show_plot(game.prey, game.predator, game.target, p1)
-
-
 
 
 if __name__ == '__main__':
