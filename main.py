@@ -48,18 +48,18 @@ class Prey(Player):
         self.net = net
 
     def decision(self, predator, target):
-        if self.distance_to(predator) > 10:
+        if self.distance_to(predator) > 17:
             dfi = self.direction_to(target) - self.fi
             if abs(dfi) > np.pi:
                 dfi -= np.sign(dfi) * 2 * np.pi
             self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
             return self.fi
 
-        self.fi += self.maxdfi * self.net.activate((self.fi / np.pi, predator.fi/np.pi,
-                                                    self.direction_to(predator) / np.pi,
-                                                    self.distance_to(predator) / 100,
-                                                    self.direction_to(target) / np.pi,
-                                                    self.distance_to(target) / 100))[0]
+        self.fi += self.maxdfi * self.net.activate((self.fi, predator.fi,
+                                                    self.direction_to(predator),
+                                                    self.distance_to(predator),
+                                                    self.direction_to(target),
+                                                    self.distance_to(target)))[0]
         return self.fi
 
 
@@ -190,7 +190,7 @@ def main():
     # init NEAT
     p = neat.Population(config)
     # p = neat.Checkpointer.restore_checkpoint('neat-checkpoint')
-    p.add_reporter(neat.Checkpointer(100))
+    # p.add_reporter(neat.Checkpointer(100))
     # Add a stdout reporter to show progress in the terminal.
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
@@ -207,7 +207,7 @@ def main():
     for i in range(0, 5):
         game = Game(winner_net, n_steps=300, r_collision=1)
         game.predator_start_max = 50.1
-        game.predator_start_min = 10.0
+        game.predator_start_min = 40.0
         game.init(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
