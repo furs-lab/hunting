@@ -48,6 +48,13 @@ class Prey(Player):
         self.net = net
 
     def decision(self, predator, target):
+        if self.distance_to(predator) > 10:
+            dfi = self.direction_to(target) - self.fi
+            if abs(dfi) > np.pi:
+                dfi -= np.sign(dfi) * 2 * np.pi
+            self.fi += np.sign(dfi) * min(self.maxdfi, abs(dfi))
+            return self.fi
+
         self.fi += self.maxdfi * self.net.activate((self.fi / np.pi, predator.fi/np.pi,
                                                     self.direction_to(predator) / np.pi,
                                                     self.distance_to(predator) / 100,
@@ -144,7 +151,8 @@ class Game:
                 game_over = True
             step += 1
         self.prey.score = self.calculate_score1(self.prey, self.predator, self.target)
-        self.prey.score += step * 0.2
+        if step < 150:
+            self.prey.score += step * 0.2
         if self.is_collision(self.prey, self.target):
             self.prey.score += 50
         if self.prey.distance_to(self.target) < 30 and not self.is_collision(self.prey, self.predator):
@@ -163,11 +171,6 @@ def run_evolution(genomes, config):
 
 
 def show_plot(prey, predator, target, p1):
-    # import sys
-    # if sys.flags.interactive != 1 or not hasattr(pg.QtCore, 'PYQT_VERSION'):
-    #     app = pg.QtWidgets.QApplication(sys.argv)
-
-    # p1 = pg.plot()
     p1.plot([target.x], [target.y], symbol='o', symbolPen='g', symbolBrush=None, symbolSize=15,
             clear=False)
     for i in range(0, len(prey.x_history)):
@@ -186,6 +189,8 @@ def main():
                                 neat.DefaultStagnation, config_path)
     # init NEAT
     p = neat.Population(config)
+    # p = neat.Checkpointer.restore_checkpoint('neat-checkpoint')
+    p.add_reporter(neat.Checkpointer(100))
     # Add a stdout reporter to show progress in the terminal.
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
@@ -202,7 +207,7 @@ def main():
     for i in range(0, 5):
         game = Game(winner_net, n_steps=300, r_collision=1)
         game.predator_start_max = 50.1
-        game.predator_start_min = 40.0
+        game.predator_start_min = 10.0
         game.init(winner_net, n_steps=300, r_collision=1)
         score = game.run()
         print(f"{score=}, {game.n_collisions=}")
